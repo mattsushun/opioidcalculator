@@ -3,9 +3,10 @@
   "name": "オピオイド 等価換算ツール",
   "icons": [
     {
-      "src": "/icon.png",
+      "src": "icons/icon-192.png",
       "type": "image/png",
       "sizes": "192x192"
+      + "purpose": "any maskable"
     }
   ],
   "start_url": "/",
