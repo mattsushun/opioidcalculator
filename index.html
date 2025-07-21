@@ -1,4 +1,3 @@
-<!-- rebuild -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -17,6 +16,7 @@
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+
     <style>
         body {
             font-family: 'Noto Sans JP', 'Inter', sans-serif;
@@ -106,8 +106,12 @@
             </button>
         </div>
         
-        <!-- High Dose Warning -->
+        <!-- Warnings Container -->
         <div id="high-dose-warning" class="mt-4 p-3 text-center font-bold hidden rounded-lg"></div>
+        <div id="methadone-warning" class="mt-4 p-3 text-red-600 bg-red-100 text-sm hidden rounded-lg"></div>
+        <div id="methadone-increase-warning" class="mt-4 p-3 text-yellow-800 bg-yellow-100 text-sm hidden rounded-lg"></div>
+        <div id="methadone-from-info" class="mt-4 p-3 bg-gray-100 border border-gray-200 text-sm hidden rounded-lg"></div>
+
 
         <!-- Switching Timing Info -->
         <div id="timing-info-container" class="mt-8 pt-6 border-t border-gray-200 hidden">
@@ -155,9 +159,9 @@
                 'hydromorphone_oral': { name: '経口ヒドロモルフォン (mg/日)', factor: 5 },
                 'tapentadol_oral': { name: '経口タペンタドール (mg/日)', factor: 3.3 },
                 'fentanyl_patch': { name: 'フェントステープ® (mg/日)', factor: 30 },
-                'buprenorphine_patch': { name: 'ブプレノルフィン貼付剤 (7日用)', factor: 10 },
                 'codeine_oral': { name: '経口コデイン (mg/日)', factor: 1/6 },
                 'tramadol_oral': { name: '経口トラマドール (mg/日)', factor: 1/10 },
+                'methadone_oral': { name: '経口メサドン (mg/日)', factor: null },
                 'morphine_iv': { name: '注射モルヒネ (mg/日)', factor: 2 },
                 'oxycodone_iv': { name: '注射オキシコドン (mg/日)', factor: 2 },
                 'hydromorphone_iv': { name: '注射ヒドロモルフォン (mg/日)', factor: null },
@@ -170,9 +174,9 @@
                 'hydromorphone_oral': 'oral',
                 'tapentadol_oral': 'oral',
                 'fentanyl_patch': 'patch',
-                'buprenorphine_patch': 'other',
                 'codeine_oral': 'oral',
                 'tramadol_oral': 'oral',
+                'methadone_oral': 'oral',
                 'morphine_iv': 'injection',
                 'oxycodone_iv': 'injection',
                 'hydromorphone_iv': 'injection',
@@ -189,15 +193,14 @@
                 'oral_to_oral': '<strong>経口薬(12時間) ⇔ 経口薬(24時間):</strong><br>・<u>12時間製剤 → 24時間製剤へ:</u> 最終内服後12時間で24時間製剤を開始します。<br>・<u>24時間製剤 → 12時間製剤へ:</u> 最終内服後24時間で12時間製剤を開始します。'
             };
 
-            // --- Dosage Table Generation ---
             function generateDosageTable(type) {
                 let tableHtml = '<table class="modal-table"><thead><tr><th>mL/時</th><th>内容</th></tr></thead><tbody>';
                 for (let i = 1; i <= 20; i++) {
                     const mlPerHour = i * 0.05;
                     let rowContent = '';
                     if (type === 'oxycodone') {
-                        const ivDose = mlPerHour * 120; // 0.05mL/hr * 24hr * 10mg/mL / 2 = 6mg/day
-                        const oralMorphineEquiv = ivDose * 2; // Factor for oxycodone_iv is 2
+                        const ivDose = mlPerHour * 120;
+                        const oralMorphineEquiv = ivDose * 2;
                         rowContent = `オキシコドン${ivDose.toFixed(0)}mg/日 ※内服モルヒネ換算${oralMorphineEquiv.toFixed(0)}mg`;
                     } else if (type === 'morphine') {
                         const ivDose = mlPerHour * 120;
@@ -205,7 +208,7 @@
                         rowContent = `モルヒネ${ivDose.toFixed(0)}mg/日 ※内服モルヒネ換算${oralEquiv.toFixed(0)}mg`;
                     } else if (type === 'hydromorphone') {
                         const ivDose = mlPerHour * 9.6;
-                        const oralMorphEquiv = ivDose * 12.5; // Special "from IV" factor
+                        const oralMorphEquiv = ivDose * 12.5;
                         const oralHydroEquiv = oralMorphEquiv / 5;
                         rowContent = `ヒドロモルフォン${ivDose.toFixed(2)}mg/日 ※経口モルヒネ${oralMorphEquiv.toFixed(0)}mg/日相当・経口ヒドロモルフォン換算${oralHydroEquiv.toFixed(1)}mg/日`;
                     }
@@ -216,18 +219,9 @@
             }
 
             const DOSAGE_TABLES = {
-                'oxycodone_iv': {
-                    title: 'オキファスト2倍希釈 容量表',
-                    content: generateDosageTable('oxycodone')
-                },
-                'morphine_iv': {
-                    title: 'モルヒネ2倍希釈 容量表',
-                    content: generateDosageTable('morphine')
-                },
-                'hydromorphone_iv': {
-                    title: 'ヒドロモルフォン3倍希釈 容量表',
-                    content: generateDosageTable('hydromorphone')
-                },
+                'oxycodone_iv': { title: 'オキファスト2倍希釈 容量表', content: generateDosageTable('oxycodone') },
+                'morphine_iv': { title: 'モルヒネ2倍希釈 容量表', content: generateDosageTable('morphine') },
+                'hydromorphone_iv': { title: 'ヒドロモルフォン3倍希釈 容量表', content: generateDosageTable('hydromorphone') },
                 'fentanyl_iv': {
                     title: 'フェンタニル原液 容量表',
                     content: `<table class="modal-table"><thead><tr><th>mL/時</th><th>内容</th></tr></thead><tbody>
@@ -269,6 +263,9 @@
             const timingInfoContainer = document.getElementById('timing-info-container');
             const timingInfoContent = document.getElementById('timing-info-content');
             const highDoseWarning = document.getElementById('high-dose-warning');
+            const methadoneWarning = document.getElementById('methadone-warning');
+            const methadoneIncreaseWarning = document.getElementById('methadone-increase-warning');
+            const methadoneFromInfo = document.getElementById('methadone-from-info');
 
             function initialize() {
                 const opioidKeys = Object.keys(OPIOIDS);
@@ -301,17 +298,31 @@
             };
 
             function calculate() {
+                // Clear all special messages first
+                highDoseWarning.classList.add('hidden');
+                methadoneWarning.classList.add('hidden');
+                methadoneIncreaseWarning.classList.add('hidden');
+                methadoneFromInfo.classList.add('hidden');
+
                 updateTableButtonVisibility('from');
                 updateTableButtonVisibility('to');
                 updateTimingInfo();
-
+                
                 const fromKey = fromOpioidSelect.value;
                 const toKey = toOpioidSelect.value;
                 const fromDose = parseFloat(fromDoseInput.value);
 
+                if (fromKey === 'methadone_oral') {
+                    resultDiv.textContent = '換算不可';
+                    resultDiv.style.color = 'black';
+                    methadoneFromInfo.innerHTML = '<strong>＜参考＞</strong><br>メサドン 15㎎→モルヒネ経口内服換算60～160㎎<br>メサドン 30㎎→モルヒネ経口内服換算160～390㎎<br>メサドン 45㎎→モルヒネ経口内服換算390㎎～';
+                    methadoneFromInfo.classList.remove('hidden');
+                    return;
+                }
+
                 if (!fromKey || !toKey || isNaN(fromDose) || fromDose < 0) {
                     resultDiv.textContent = '-';
-                    highDoseWarning.classList.add('hidden');
+                    resultDiv.style.color = 'black';
                     return;
                 }
 
@@ -321,13 +332,11 @@
                 } else {
                     morphineEquivalent = fromDose * OPIOIDS[fromKey].factor;
                 }
-
+                
                 if (morphineEquivalent >= 90) {
                     highDoseWarning.textContent = '投与量が多いため、安全にローテーションするため２～３日での分割での変換を考慮してください';
                     highDoseWarning.classList.remove('hidden');
                     highDoseWarning.classList.add('text-red-600', 'bg-red-100');
-                } else {
-                    highDoseWarning.classList.add('hidden');
                 }
 
                 if (fromKey === toKey) {
@@ -337,12 +346,31 @@
                         resultText = `${fromDose.toFixed(2)} mg/日 (${ughDose.toFixed(1)} µg/h)`;
                     }
                     resultDiv.textContent = resultText;
+                    resultDiv.style.color = 'black';
                     return;
                 }
 
                 let resultDose;
                 let resultText;
-                if (toKey === 'hydromorphone_iv') {
+                resultDiv.style.color = 'black';
+
+                if (toKey === 'methadone_oral') {
+                    methadoneWarning.textContent = 'QTc間隔が450-500msecに達した場合には投薬継続のリスクとベネフィットを患者と相談しより注意深い観察を要し，500msecを超えた場合にはメサドンの減量または中止する必要があります';
+                    methadoneWarning.classList.remove('hidden');
+
+                    if (morphineEquivalent <= 59) {
+                        resultText = '非推奨';
+                        resultDiv.style.color = 'red';
+                    } else if (morphineEquivalent >= 60 && morphineEquivalent <= 159) {
+                        resultText = '15 mg/日';
+                    } else if (morphineEquivalent >= 160 && morphineEquivalent <= 359) {
+                        resultText = '30 mg/日';
+                    } else { // >= 360
+                        resultText = '45 mg/日';
+                        methadoneIncreaseWarning.textContent = '45㎎以上投与するときには一遍には変更せず、段階的に増量してください';
+                        methadoneIncreaseWarning.classList.remove('hidden');
+                    }
+                } else if (toKey === 'hydromorphone_iv') {
                     resultDose = morphineEquivalent / 25;
                     resultText = `${resultDose.toFixed(2)}${getUnit(toKey)}`;
                 } else if (toKey === 'fentanyl_iv') {
@@ -365,7 +393,7 @@
                 
                 const currentResultText = resultDiv.textContent;
                 const doseMatch = currentResultText.match(/^[0-9.]+/);
-                if (doseMatch) {
+                if (doseMatch && !isNaN(parseFloat(doseMatch[0]))) {
                     fromDoseInput.value = parseFloat(doseMatch[0]).toFixed(2);
                 } else {
                     fromDoseInput.value = '';
